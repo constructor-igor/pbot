@@ -105,12 +105,6 @@ async def process_forecast_command(message: types.Message):
     location = user_settings.default_location
     forecast_list = weather_client.get_forecast(location)
     forecast = '\n'.join([f"{date} - {temp['min_temp']}..{temp['max_temp']} degrees, {temp['description']}" for date, temp in forecast_list])
-    # for forecast in forecast_list:
-    #     date, temp = forecast
-    #     max_temp = temp['max_temp']
-    #     min_temp = temp['min_temp']
-    #     description = temp['description']
-    #     resposne = response + "\n" + f"{date} - {min_temp}..{max_temp} degrees, {description}"
     await message.reply(f"{forecast}\n\n{configuration.bot_name}")
 
 @dp.message_handler(commands=["gematria"])
