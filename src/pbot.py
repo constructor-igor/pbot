@@ -1,6 +1,5 @@
 import os
 import datetime
-import requests
 import logging
 import re
 from aiogram import Bot, types
