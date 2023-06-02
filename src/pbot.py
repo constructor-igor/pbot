@@ -52,6 +52,7 @@ def get_main_menu():
     keyboard = ReplyKeyboardMarkup(resize_keyboard=True)
     keyboard.add(KeyboardButton("/today"))
     keyboard.add(KeyboardButton("/weather"))
+    keyboard.add(KeyboardButton("/forecast"))
     keyboard.add(KeyboardButton("/gematria"))
     return keyboard
 
@@ -98,6 +99,20 @@ async def process_weather_command(message: types.Message):
     location_name, cur_temp, sunrise_timestamp, sunset_timestamp = weather_client.get_weather(source_location_name)
     await message.reply(f"Weather in {location_name} now is {cur_temp}C\nSunrise: {sunrise_timestamp}\nSunset: {sunset_timestamp}\n\n{configuration.bot_name}")
 
+async def process_forecast_command(message: types.Message):
+    message_log(message, "[process_forecast_command] ")
+    weather_client = WeatherClient(configuration.weather_api_key)
+    location = user_settings.default_location
+    forecast_list = weather_client.get_forecast(location)
+    forecast = '\n'.join([f"{date} - {temp['min_temp']}..{temp['max_temp']} degrees, {temp['description']}" for date, temp in forecast_list])
+    # for forecast in forecast_list:
+    #     date, temp = forecast
+    #     max_temp = temp['max_temp']
+    #     min_temp = temp['min_temp']
+    #     description = temp['description']
+    #     resposne = response + "\n" + f"{date} - {min_temp}..{max_temp} degrees, {description}"
+    await message.reply(f"{forecast}\n\n{configuration.bot_name}")
+
 @dp.message_handler(commands=["gematria"])
 async def gematrya_command(message: types.Message, state: FSMContext):
     message_log(message, "[gematrya_command] ")
@@ -126,6 +141,8 @@ async def main_menu_commands(message: types.Message, state: FSMContext):
         await show_date(message)
     elif message.text == "/weather":
         await process_weather_command(message)
+    elif message.text == "/forecast":
+        await process_forecast_command(message)
     elif message.text == "/gematria":
         await gematrya_command(message, state)
     else:
@@ -148,7 +165,7 @@ async def process_message(message: types.Message, state: FSMContext):
     #     hp = HebrewProcessing()
     #     await message.reply(hp.process(message.text))
     else:
-        weather_client = WeatherClient()
+        weather_client = WeatherClient(configuration.weather_api_key)
         source_location_name = message.text
         try:
             location_name, cur_temp, sunrise_timestamp, sunset_timestamp = weather_client.get_weather(source_location_name)
