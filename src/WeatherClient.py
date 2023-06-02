@@ -1,7 +1,6 @@
 import datetime
 from datetime import timezone, timedelta
 import requests
-from config import configuration
 #
 # https://openweathermap.org/current
 #
