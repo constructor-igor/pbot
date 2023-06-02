@@ -109,7 +109,7 @@ async def gematrya_command(message: types.Message, state: FSMContext):
 @dp.message_handler(state=UserStatus.GEMATRYA)
 async def process_gematria(message: types.Message, state: FSMContext):
     message_log(message, "[process_gematria] ")
-    if message.text == "/back" or message.text == "back":
+    if message.text in ('/back', 'back'):
         await message.reply("Select command in menu", reply_markup=get_main_menu())
         await UserStatus.MAIN_MENU.set()
     else:
