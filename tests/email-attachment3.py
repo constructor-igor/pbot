@@ -9,13 +9,6 @@ class IgnoreImboxParserFilter(logging.Filter):
         record.module not in ['imbox', 'parser']
         # return "INFO:imbox.parser" not in record.getMessage()
 
-emails_year = '2023'
-host = "imap.gmail.com"
-username = "igor.zc"
-password = 'prrnjbrippgqvdjm'
-folder = "J/toldot"
-download_folder = r"@experiments\attachments"
-
 
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
