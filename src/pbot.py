@@ -10,23 +10,13 @@ from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 
+from config import configuration
 from UserSetting import UserSetting
 from GoogleDriveDownloader import GoogleDriveDownloader
 from YoutubeDownloader import YoutubeDownloader
 from WeatherClient import WeatherClient
 from HebrewProcessing import HebrewProcessing
 from HebrewCalendar import HebrewCalendar
-
-#
-#
-# https://habr.com/ru/companies/selectel/articles/734194/
-#
-# telegram bot docs: https://core.telegram.org/bots/api
-# packages: requests aiogram
-#
-# states + memory- https://www.youtube.com/watch?v=R4kaZ0y_V6U
-#
-from config import configuration
 
 # Define user states
 class UserStatus(StatesGroup):

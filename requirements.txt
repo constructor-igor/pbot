@@ -1,5 +1,3 @@
 aiogram
 pytube
-gdown
-google-api-python-client
 pyluach
