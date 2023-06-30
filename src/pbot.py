@@ -89,6 +89,7 @@ async def process_weather_command(message: types.Message):
     location_name, cur_temp, sunrise_timestamp, sunset_timestamp = weather_client.get_weather(source_location_name)
     await message.reply(f"Weather in {location_name} now is {cur_temp}C\nSunrise: {sunrise_timestamp}\nSunset: {sunset_timestamp}\n\n{configuration.bot_name}")
 
+@dp.message_handler(commands=["forecast"])
 async def process_forecast_command(message: types.Message):
     message_log(message, "[process_forecast_command] ")
     weather_client = WeatherClient(configuration.weather_api_key)
