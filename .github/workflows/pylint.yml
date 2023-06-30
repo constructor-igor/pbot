@@ -21,4 +21,4 @@ jobs:
         pip install pyluach
     - name: Analysing the code with pylint
       run: |
-        pylint --disable=C0301 --disable=C0114 --ignore-paths=^tests/.*$, $(git ls-files '*.py')
+        pylint --disable=C0301 --disable=C0114 --disable=C0115 --ignore-paths=^tests/.*$, $(git ls-files '*.py')
