@@ -144,8 +144,8 @@ async def process_message(message: types.Message, state: FSMContext):
         await message.reply(f"Downloaded {message.text}")
     elif "youtu.be" in message.text or "youtube.com" in message.text:
         yd = YoutubeDownloader()
-        yd.download(message.text, "")
-        await message.reply(f"Downloaded {message.text}")
+        file_size = yd.download(message.text, "")
+        await message.reply(f"Downloaded {message.text} with size {int(file_size/(1024*1024))}MB")
     # elif contains_hebrew_chars(message.text):
     #     hp = HebrewProcessing()
     #     await message.reply(hp.process(message.text))
