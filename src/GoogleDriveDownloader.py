@@ -1,3 +1,4 @@
+import os
 import requests
 import re
 
@@ -23,6 +24,8 @@ class GoogleDriveDownloader:
             response = session.get(URL, params = params, stream = True)
 
         self.save_response_content(response, destination)
+        file_size = os.path.getsize(destination) if os.path.exists(destination) else 0
+        return file_size
 
     def get_if_from_url(self, url):
         # Extract the ID from the URL using regular expressions

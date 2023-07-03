@@ -10,6 +10,7 @@ from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 
+from utils import bytes_to_mb
 from config import configuration
 from UserSetting import UserSetting
 from GoogleDriveDownloader import GoogleDriveDownloader
@@ -140,12 +141,12 @@ async def process_message(message: types.Message, state: FSMContext):
         await show_date(message)
     elif message.text.startswith("https://drive.google.com"):
         gdd = GoogleDriveDownloader()
-        gdd.download(message.text, "episode.mp3")
-        await message.reply(f"Downloaded {message.text}")
+        file_size = gdd.download(message.text, "episode.mp3")
+        await message.reply(f"Downloaded {message.text} with size {bytes_to_mb(file_size)}")
     elif "youtu.be" in message.text or "youtube.com" in message.text:
         yd = YoutubeDownloader()
         file_size = yd.download(message.text, "")
-        await message.reply(f"Downloaded {message.text} with size {int(file_size/(1024*1024))}MB")
+        await message.reply(f"Downloaded {message.text} with size {bytes_to_mb(file_size)}")
     # elif contains_hebrew_chars(message.text):
     #     hp = HebrewProcessing()
     #     await message.reply(hp.process(message.text))
