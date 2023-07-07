@@ -22,3 +22,7 @@ class HebrewCalendar:
         parsha_heb = parshios.getparsha_string(today, israel=True, hebrew=True)
 
         return f"{today.day}.{today.month} {today.year} ({today.month_name()}), {today_hebrew_year}\nParsha (Israel)={parsha_eng}({parsha_heb})"
+    def get_holiday(self, date=None, hebrew=True):
+        if date==None:
+            date = self.get_hebrew_date()
+        return date.holiday(hebrew=hebrew)

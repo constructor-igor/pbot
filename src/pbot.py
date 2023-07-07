@@ -19,6 +19,9 @@ from WeatherClient import WeatherClient
 from HebrewProcessing import HebrewProcessing
 from HebrewCalendar import HebrewCalendar
 
+TAMMUZ: int = 4
+AV: int = 5
+
 # Define user states
 class UserStatus(StatesGroup):
     MAIN_MENU = State()  # Main menu state
@@ -27,8 +30,14 @@ class UserStatus(StatesGroup):
 log_folder_path = configuration.log_folder_path
 if not os.path.exists(log_folder_path):
     os.makedirs(log_folder_path)
+data_folder = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..\\data"))
 
+# logging to console and file
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logging.basicConfig(level=logging.INFO, filename=os.path.join(log_folder_path, "bot.log"), format="%(asctime)s - %(levelname)s - %(message)s")
+logging.info("Starting bot...")
+logging.info(f"Log folder: {log_folder_path}")
+logging.info(f"Data folder: {data_folder}")
 
 bot = Bot(token=configuration.bot_api_token)
 storage = MemoryStorage()
@@ -81,6 +90,11 @@ async def show_date(message: types.Message):
     response = f"Gregorian date: {gregorian_date}\nHebrew date: {hebrew_date_str}"
     # response = f"Gregorian date: {gregorian_date}"
     await message.reply(response)
+
+    today = hebrew_calendar.get_hebrew_date()
+    if (today.month == TAMMUZ and today.day >=17) or (today.month == AV and today.day <= 9):
+        with open(os.path.join(data_folder, "3weeks.jpg"), "rb") as photo_file:
+            await message.bot.send_photo(message.chat.id, photo_file, caption="('меж теснин') - три скорбные недели с 17 тамуза до 9 ава (https://vaikra.com/)")
 
 @dp.message_handler(commands=["weather"])
 async def process_weather_command(message: types.Message):
