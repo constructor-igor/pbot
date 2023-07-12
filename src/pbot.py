@@ -115,7 +115,7 @@ async def show_calendar(message: types.Message):
     calendar_image_builder = CalendarImageBuilder()
     calendar_image_builder.build_calendar_image(year, month, {}, calendar_image_file)
     with open(calendar_image_file, "rb") as photo_file:
-        await message.bot.send_photo(message.chat.id, photo_file, caption="Calnedar")
+        await message.bot.send_photo(message.chat.id, photo_file, caption="Calendar")
 
 @dp.message_handler(commands=["weather"])
 async def process_weather_command(message: types.Message):
