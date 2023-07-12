@@ -1,7 +1,8 @@
 import calendar
 from PIL import Image, ImageDraw, ImageFont
 
-class CalendarImageBuilding():
+
+class CalendarImageBuilder():
     def __init__(self):
         # Define the image dimensions and font settings
         self.image_width = 800
@@ -25,7 +26,7 @@ class CalendarImageBuilding():
         x = self.image_width / 2 - x_offset
         y = y_offset
         month_name = calendar.month_name[month]
-        draw.text((x, y), f"{month_name} / {year}", font=font, fill=self.font_color)
+        draw.text((x, y), f"{month_name} {year}", font=font, fill=self.font_color)
 
         y_offset += self.font_size + 10
         # Draw the days of the week
@@ -67,17 +68,3 @@ class CalendarImageBuilding():
         # Generate the calendar
         cal = calendar.monthcalendar(year, month)
         return cal
-
-if __name__ == "__main__":
-    # Define the calendar dimensions and event data
-    year = 2023
-    month = 7
-    event_data = {
-        4: ['Event 1'],
-        10: ['Event 2'],
-        15: ['Event 3', 'Event 4'],
-        25: ['Event 5']
-    }
-
-    calendar_image_building = CalendarImageBuilding()
-    calendar_image_building.build_calendar_image(2023, 7, event_data, f'calendar_{year}_{month}.png')

@@ -1,6 +1,7 @@
 \@experiments
 \@logs
 \__pycache__
+\@output
 credentials.json
 config.json
 client_secret_933036317465-0mt6j8ph23tm3mkamicdbl1pek3lniag.apps.googleusercontent.com copy.json
