@@ -18,6 +18,7 @@ from YoutubeDownloader import YoutubeDownloader
 from WeatherClient import WeatherClient
 from HebrewProcessing import HebrewProcessing
 from HebrewCalendar import HebrewCalendar
+from CalendarImageBuilder import CalendarImageBuilder
 
 TAMMUZ: int = 4
 AV: int = 5
@@ -51,6 +52,7 @@ def message_log(message, custom=""):
 def get_main_menu():
     keyboard = ReplyKeyboardMarkup(resize_keyboard=True)
     keyboard.add(KeyboardButton("/today"))
+    keyboard.add(KeyboardButton("/calendar"))
     keyboard.add(KeyboardButton("/weather"))
     keyboard.add(KeyboardButton("/forecast"))
     keyboard.add(KeyboardButton("/gematria"))
@@ -79,7 +81,7 @@ async def start_command(message: types.Message, state: FSMContext):
 
 @dp.message_handler(commands=["today"])
 async def show_date(message: types.Message):
-    message_log(message, "[show_date] ")
+    message_log(message, "[show_date]")
     current_date = datetime.datetime.now()
     gregorian_date = current_date.strftime("%Y-%m-%d")  # Format: YYYY-MM-DD
 
@@ -95,6 +97,18 @@ async def show_date(message: types.Message):
     if (today.month == TAMMUZ and today.day >=17) or (today.month == AV and today.day <= 9):
         with open(os.path.join(data_folder, "3weeks.jpg"), "rb") as photo_file:
             await message.bot.send_photo(message.chat.id, photo_file, caption="('меж теснин') - три скорбные недели с 17 тамуза до 9 ава (https://vaikra.com/)")
+
+@dp.message_handler(commands=["calendar"])
+async def show_calendar(message: types.Message):
+    message_log(message, "[show_calendar]")
+    current_date = datetime.datetime.now()
+    year = current_date.year
+    month = current_date.month
+    calendar_image_file = os.path.join(data_folder, "calendar.jpg")
+    calendar_image_builder = CalendarImageBuilder()
+    calendar_image_builder.build_calendar_image(year, month, {}, calendar_image_file)
+    with open(calendar_image_file, "rb") as photo_file:
+        await message.bot.send_photo(message.chat.id, photo_file, caption="Calnedar")
 
 @dp.message_handler(commands=["weather"])
 async def process_weather_command(message: types.Message):
@@ -139,6 +153,8 @@ async def main_menu_commands(message: types.Message, state: FSMContext):
         await start_command(message, state)
     if message.text == "/today":
         await show_date(message)
+    elif message.text == "/calendar":
+        await show_calendar(message)
     elif message.text == "/weather":
         await process_weather_command(message)
     elif message.text == "/forecast":
