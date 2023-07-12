@@ -19,6 +19,7 @@ from WeatherClient import WeatherClient
 from HebrewProcessing import HebrewProcessing
 from HebrewCalendar import HebrewCalendar
 from CalendarImageBuilder import CalendarImageBuilder
+from ExchangeRates import ExchangeRates
 
 TAMMUZ: int = 4
 AV: int = 5
@@ -90,6 +91,12 @@ async def show_date(message: types.Message):
     hebrew_date_str = hebrew_calendar.get_hebrew_date_str()
 
     response = f"Gregorian date: {gregorian_date}\nHebrew date: {hebrew_date_str}"
+
+    rates = ExchangeRates(configuration.rates_access_token)
+    rates = rates.get_rate(base_currency='USD', target_currencies=['ILS', 'EUR'])
+    response += f'\n1 USD = {rates["ILS"]} ILS  / 1 EUR = {rates["ILS"]/rates["EUR"]} ILS'
+    # logging.info(f'1 USD = {rates["ILS"]} ILS  / {rates["EUR"]} EUR')
+    # logging.info(f'1 EUR = {rates["ILS"]/rates["EUR"]} ILS')
     # response = f"Gregorian date: {gregorian_date}"
     await message.reply(response)
 

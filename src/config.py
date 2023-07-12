@@ -10,5 +10,6 @@ class Config():
         self.chat_id = config['Credentials']['chat_id']
         self.weather_api_key = config['Credentials']['weather_api_key']
         self.log_folder_path = config['Paths']['log_folder_path']
+        self.rates_access_token = config['Credentials']['openexchangerates']
 
 configuration = Config()
