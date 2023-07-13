@@ -20,6 +20,7 @@ from HebrewProcessing import HebrewProcessing
 from HebrewCalendar import HebrewCalendar
 from CalendarImageBuilder import CalendarImageBuilder
 from ExchangeRates import ExchangeRates
+from IsraelMetrologyService import IsraelMetrologyService
 
 TAMMUZ: int = 4
 AV: int = 5
@@ -56,6 +57,7 @@ def get_main_menu():
     keyboard.add(KeyboardButton("/calendar"))
     keyboard.add(KeyboardButton("/weather"))
     keyboard.add(KeyboardButton("/forecast"))
+    keyboard.add(KeyboardButton("/beaches"))
     keyboard.add(KeyboardButton("/gematria"))
     return keyboard
 
@@ -134,6 +136,18 @@ async def process_forecast_command(message: types.Message):
     forecast = '\n'.join([f"{date} - {temp['min_temp']}..{temp['max_temp']} degrees, {temp['description']}" for date, temp in forecast_list])
     await message.reply(f"{forecast}\n\n{configuration.bot_name}")
 
+@dp.message_handler(commands=["beaches"])
+async def process_beaches_command(message: types.Message):
+    message_log(message, "[process_beaches_command] ")
+    ims = IsraelMetrologyService()
+    ims.dwoanload_data()
+    ims.parse_data()
+    beaches_status = ims.get_beaches_status()
+    full_status = ""
+    for beach in beaches_status:
+        full_status += f"{beach.beach_name} - {beach.get_status(beach.status)}\n"
+    await message.reply(full_status)
+
 @dp.message_handler(commands=["gematria"])
 async def gematrya_command(message: types.Message, state: FSMContext):
     message_log(message, "[gematrya_command] ")
@@ -141,6 +155,7 @@ async def gematrya_command(message: types.Message, state: FSMContext):
     keyboard.add(KeyboardButton("/back"))
     await message.answer("Enter the text to calculate gematrya or type /back to return to the main menu:", reply_markup=keyboard)
     await UserStatus.GEMATRYA.set()  # Set the user state to gematrya calculation
+
 @dp.message_handler(state=UserStatus.GEMATRYA)
 async def process_gematria(message: types.Message, state: FSMContext):
     message_log(message, "[process_gematria] ")
@@ -166,6 +181,8 @@ async def main_menu_commands(message: types.Message, state: FSMContext):
         await process_weather_command(message)
     elif message.text == "/forecast":
         await process_forecast_command(message)
+    elif message.text == "/beaches":
+        await process_beaches_command(message)
     elif message.text == "/gematria":
         await gematrya_command(message, state)
     else:
