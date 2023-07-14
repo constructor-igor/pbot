@@ -34,7 +34,7 @@ class BeachStatus:
         10: 'Calm',
         20: 'Rippled',
         30: 'Smooth',
-        40: 'Slight to slight',
+        40: 'Smooth to slight',
         50: 'Slight',
         55: 'Slight to moderate',
         60: 'Moderate',
