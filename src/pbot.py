@@ -1,5 +1,6 @@
 import os
-import datetime
+# import datetime
+from datetime import datetime, timedelta
 import logging
 import re
 from aiogram import Bot, types
@@ -8,7 +9,8 @@ from aiogram.utils import executor
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
-from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
+from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, ParseMode
+import asyncio
 
 from utils import bytes_to_mb
 from config import configuration
@@ -21,6 +23,7 @@ from HebrewCalendar import HebrewCalendar
 from CalendarImageBuilder import CalendarImageBuilder
 from ExchangeRates import ExchangeRates
 from IsraelMetrologyService import IsraelMetrologyService
+
 
 TAMMUZ: int = 4
 AV: int = 5
@@ -46,6 +49,43 @@ bot = Bot(token=configuration.bot_api_token)
 storage = MemoryStorage()
 dp = Dispatcher(bot, storage=storage)
 user_settings = UserSetting()
+
+def russian_month_name(month):
+    month_names = [
+        'Январь', 'Февраль', 'Март', 'Апрель',
+        'Май', 'Июнь', 'Июль', 'Август',
+        'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'
+    ]
+    return month_names[month - 1]
+
+def russian_day_name(day):
+    day_names = [
+        'Понедельник', 'Вторник', 'Среда', 'Четверг',
+        'Пятница', 'Суббота', 'Воскресенье'
+    ]
+    return day_names[day]
+
+def modiin_hello_message():
+    specific_date = datetime(year=2023, month=10, day=7)
+    current_date = datetime.now()
+    number_of_days = (current_date - specific_date).days + 1
+
+    day_of_week = russian_day_name(current_date.weekday())
+    day_of_month = current_date.day
+    month = russian_month_name(current_date.month)
+    year = current_date.year
+    formatted_date = f'{day_of_week}, {day_of_month} {month} {year}'
+
+    weather_client = WeatherClient(configuration.weather_api_key)
+    source_location_name = user_settings.default_location
+    location_name, cur_temp, sunrise_timestamp, sunset_timestamp = weather_client.get_weather(source_location_name)
+    weather_message = f"Сейчас {cur_temp}C. Восход: {sunrise_timestamp}, закат: {sunset_timestamp}."
+
+    forecast_list = weather_client.get_forecast(source_location_name)
+    forecast = '\n'.join([f"{date} - {temp['min_temp']}..{temp['max_temp']} C, {temp['description']}" for date, temp in forecast_list])
+
+    return f"Сегодня {formatted_date}. {number_of_days} день войны.\n{weather_message}\n{forecast}"
+
 
 def message_log(message, custom=""):
     user = message['from']
@@ -75,6 +115,11 @@ async def shutdown(dispatcher: Dispatcher):
     await storage.close()
     await bot.close()
 
+async def modiin_hello_command(message: types.Message, state: FSMContext):
+     chat_id = -1001193789881
+     await bot.send_message(chat_id, modiin_hello_message(), parse_mode=ParseMode.MARKDOWN)
+
+
 @dp.message_handler(commands=["start"])
 async def start_command(message: types.Message, state: FSMContext):
     message_log(message, "[start_command] ")
@@ -85,7 +130,7 @@ async def start_command(message: types.Message, state: FSMContext):
 @dp.message_handler(commands=["today"])
 async def show_date(message: types.Message):
     message_log(message, "[show_date]")
-    current_date = datetime.datetime.now()
+    current_date = datetime.now()
     gregorian_date = current_date.strftime("%Y-%m-%d")  # Format: YYYY-MM-DD
 
     hebrew_calendar = HebrewCalendar()
@@ -110,7 +155,7 @@ async def show_date(message: types.Message):
 @dp.message_handler(commands=["calendar"])
 async def show_calendar(message: types.Message):
     message_log(message, "[show_calendar]")
-    current_date = datetime.datetime.now()
+    current_date = datetime.now()
     year = current_date.year
     month = current_date.month
     calendar_image_file = os.path.join(data_folder, "calendar.jpg")
@@ -156,6 +201,22 @@ async def gematrya_command(message: types.Message, state: FSMContext):
     await message.answer("Enter the text to calculate gematrya or type /back to return to the main menu:", reply_markup=keyboard)
     await UserStatus.GEMATRYA.set()  # Set the user state to gematrya calculation
 
+async def channel_command(message: types.Message):
+    message_log(message, "[channel_command] ")
+    message_text = message.text
+    message_items = message_text.split()
+    channel_name = ''
+    channel_id = ''
+    if len(message_items) > 1:
+        channel_name = message_items[1]
+        try:
+            chat = await bot.get_chat(channel_name)
+            channel_id = chat.id
+            error = ''
+        except Exception as e:
+            error = f" -- get_chat failed for '{channel_name}' with {e}"
+    await message.reply(f"channel info: name='{channel_name}', id={channel_id}{error}")
+
 @dp.message_handler(state=UserStatus.GEMATRYA)
 async def process_gematria(message: types.Message, state: FSMContext):
     message_log(message, "[process_gematria] ")
@@ -171,6 +232,8 @@ async def process_gematria(message: types.Message, state: FSMContext):
 @dp.message_handler(state=UserStatus.MAIN_MENU)
 async def main_menu_commands(message: types.Message, state: FSMContext):
     message_log(message, "[main_menu_commands] ")
+    if message.text == "/modiin":
+        await modiin_hello_command(message, state)
     if message.text == "/start":
         await start_command(message, state)
     if message.text == "/today":
@@ -185,6 +248,8 @@ async def main_menu_commands(message: types.Message, state: FSMContext):
         await process_beaches_command(message)
     elif message.text == "/gematria":
         await gematrya_command(message, state)
+    elif message.text.startswith("/channel"):
+        await channel_command(message)
     else:
         await process_message(message, state)
 
@@ -214,8 +279,53 @@ async def process_message(message: types.Message, state: FSMContext):
             logging.error(f"get_weather failed for '{source_location_name}' with {e}")
             await message.reply(f"Location '{source_location_name}' not found")
 
-if __name__ == "__main__":
+async def forward_message(message: types.Message):
+    logging.info(message)
+    await bot.forward_message(chat_id=configuration.chat_id, from_chat_id=message.chat.id, message_id=message.message_id)
+
+@dp.message_handler(chat_id=-1001203517764)
+async def handle_messages(message: types.Message):
+    # Handle messages in the CumtaAlertsChannel and forward them to the destination channel
+    await forward_message(message)
+
+@dp.message_handler(chat_id=-1001740956434)
+async def handle_messages(message: types.Message):
+    # Handle messages in the CumtaAlertsChannel and forward them to the destination channel
+    await forward_message(message)
+
+@dp.message_handler(chat_id=-1001509885343)
+async def handle_messages(message: types.Message):
+    # Handle messages in the CumtaAlertsChannel and forward them to the destination channel
+    await forward_message(message)
+
+class SchedulerMessage():
+    def __init__(self, bot):
+        self.bot = bot
+        self.loop = asyncio.get_event_loop()
+    def add_event(self, hour, minutes, message_func):
+        self.loop.create_task(self.send_scheduled_message(hour, minutes, message_func))
+    async def send_scheduled_message(self, hour, minutes, message_func):
+        while True:
+            now = datetime.now()
+            target_time = now.replace(hour=hour, minute=minutes, second=0, microsecond=0)
+            time_until_target = target_time - now
+            if time_until_target.total_seconds() < 0:
+                target_time += timedelta(days=1)
+            await asyncio.sleep((target_time - datetime.now()).total_seconds())
+            modiin_group_id = -1001193789881
+            await bot.send_message(modiin_group_id, message_func(), parse_mode=ParseMode.MARKDOWN)
+            logging.info("Scheduled message sent.")
+
+
+def start_bot():
+    scheduler_message = SchedulerMessage(bot)
+    scheduler_message.add_event(hour=7, minutes=0, message_func=modiin_hello_message)
 	# С помощью метода executor.start_polling опрашиваем
     # Dispatcher: ожидаем команду /start
     # executor.start_polling(dp, on_startup=startup, on_shutdown=shutdown)
     executor.start_polling(dp, on_startup=startup, on_shutdown=shutdown)
+
+# modiin group: 1001193789881
+
+if __name__ == "__main__":
+    start_bot()

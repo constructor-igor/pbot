@@ -20,9 +20,11 @@ class WeatherClient():
             tz = timezone(timedelta(seconds=time_zone))
             sunrise_timestamp = datetime.datetime.fromtimestamp(data["sys"]["sunrise"], tz)
             sunset_timestamp = datetime.datetime.fromtimestamp(data["sys"]["sunset"], tz)
+            sunrise_time = sunrise_timestamp.strftime('%H:%M')
+            sunset_time = sunset_timestamp.strftime('%H:%M')
             # sunset_timestamp = f"{datetime.datetime.now(tz).strftime('%Y-%m-%d %H:%M')}"
             # sunrise_timestamp = f"{datetime.datetime.now(tz).strftime('%Y-%m-%d %H:%M')}"
-            return location_name, cur_temp, sunrise_timestamp, sunset_timestamp
+            return location_name, cur_temp, sunrise_time, sunset_time
     def get_forecast(self, location_name):
         response = requests.get(f"http://api.openweathermap.org/data/2.5/forecast?q={location_name}&units=metric&appid={self.weather_api_key}")
         data = response.json()
