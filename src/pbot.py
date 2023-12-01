@@ -23,6 +23,7 @@ from HebrewCalendar import HebrewCalendar
 from CalendarImageBuilder import CalendarImageBuilder
 from ExchangeRates import ExchangeRates
 from IsraelMetrologyService import IsraelMetrologyService
+from LocationStatusImageBuilder import LocationStatusImageBuilder
 
 
 TAMMUZ: int = 4
@@ -50,41 +51,45 @@ storage = MemoryStorage()
 dp = Dispatcher(bot, storage=storage)
 user_settings = UserSetting()
 
-def russian_month_name(month):
-    month_names = [
-        'Январь', 'Февраль', 'Март', 'Апрель',
-        'Май', 'Июнь', 'Июль', 'Август',
-        'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'
-    ]
-    return month_names[month - 1]
+# def russian_month_name(month):
+#     month_names = [
+#         'Январь', 'Февраль', 'Март', 'Апрель',
+#         'Май', 'Июнь', 'Июль', 'Август',
+#         'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'
+#     ]
+#     return month_names[month - 1]
 
-def russian_day_name(day):
-    day_names = [
-        'Понедельник', 'Вторник', 'Среда', 'Четверг',
-        'Пятница', 'Суббота', 'Воскресенье'
-    ]
-    return day_names[day]
+# def russian_day_name(day):
+#     day_names = [
+#         'Понедельник', 'Вторник', 'Среда', 'Четверг',
+#         'Пятница', 'Суббота', 'Воскресенье'
+#     ]
+#     return day_names[day]
 
-def modiin_hello_message():
-    specific_date = datetime(year=2023, month=10, day=7)
-    current_date = datetime.now()
-    number_of_days = (current_date - specific_date).days + 1
+def modiin_hello_image():
+    builder = LocationStatusImageBuilder("Modiin", WeatherClient(configuration.weather_api_key))
+    builder.build(os.path.join(data_folder, "modiin.jpg"))
+    return os.path.join(data_folder, "modiin.jpg")
+# def modiin_hello_message():
+#     # specific_date = datetime(year=2023, month=10, day=7)
+#     # current_date = datetime.now()
+#     # number_of_days = (current_date - specific_date).days + 1
 
-    day_of_week = russian_day_name(current_date.weekday())
-    day_of_month = current_date.day
-    month = russian_month_name(current_date.month)
-    year = current_date.year
-    formatted_date = f'{day_of_week}, {day_of_month} {month} {year}'
+#     # day_of_week = russian_day_name(current_date.weekday())
+#     # day_of_month = current_date.day
+#     # month = russian_month_name(current_date.month)
+#     # year = current_date.year
+#     # formatted_date = f'{day_of_week}, {day_of_month} {month} {year}'
 
-    weather_client = WeatherClient(configuration.weather_api_key)
-    source_location_name = user_settings.default_location
-    location_name, cur_temp, sunrise_timestamp, sunset_timestamp = weather_client.get_weather(source_location_name)
-    weather_message = f"Сейчас {cur_temp}C. Восход: {sunrise_timestamp}, закат: {sunset_timestamp}."
+#     # weather_client = WeatherClient(configuration.weather_api_key)
+#     # source_location_name = user_settings.default_location
+#     # location_name, cur_temp, sunrise_timestamp, sunset_timestamp = weather_client.get_weather(source_location_name)
+#     # weather_message = f"Сейчас {cur_temp}C. Восход: {sunrise_timestamp}, закат: {sunset_timestamp}."
 
-    forecast_list = weather_client.get_forecast(source_location_name)
-    forecast = '\n'.join([f"{date} - {temp['min_temp']}..{temp['max_temp']} C, {temp['description']}" for date, temp in forecast_list])
+#     # forecast_list = weather_client.get_forecast(source_location_name)
+#     # forecast = '\n'.join([f"{date} - {temp['min_temp']}..{temp['max_temp']} C, {temp['description']}" for date, temp in forecast_list])
 
-    return f"Сегодня {formatted_date}. {number_of_days} день войны.\n{weather_message}\n{forecast}"
+#     # return f"Сегодня {formatted_date}. {number_of_days} день войны.\n{weather_message}\n{forecast}"
 
 
 def message_log(message, custom=""):
@@ -116,9 +121,10 @@ async def shutdown(dispatcher: Dispatcher):
     await bot.close()
 
 async def modiin_hello_command(message: types.Message, state: FSMContext):
-     chat_id = -1001193789881
-     await bot.send_message(chat_id, modiin_hello_message(), parse_mode=ParseMode.MARKDOWN)
-
+    chat_id = -1001193789881
+    target_image_path = modiin_hello_image()
+    with open(target_image_path, "rb") as photo_file:
+        await message.bot.send_photo(chat_id, photo_file, caption="")
 
 @dp.message_handler(commands=["start"])
 async def start_command(message: types.Message, state: FSMContext):
@@ -302,9 +308,9 @@ class SchedulerMessage():
     def __init__(self, bot):
         self.bot = bot
         self.loop = asyncio.get_event_loop()
-    def add_event(self, hour, minutes, message_func):
-        self.loop.create_task(self.send_scheduled_message(hour, minutes, message_func))
-    async def send_scheduled_message(self, hour, minutes, message_func):
+    def add_event(self, hour, minutes, message_func, message_type="text"):
+        self.loop.create_task(self.send_scheduled_message(hour, minutes, message_func, message_type))
+    async def send_scheduled_message(self, hour, minutes, message_func, message_type="text"):
         while True:
             now = datetime.now()
             target_time = now.replace(hour=hour, minute=minutes, second=0, microsecond=0)
@@ -313,13 +319,17 @@ class SchedulerMessage():
                 target_time += timedelta(days=1)
             await asyncio.sleep((target_time - datetime.now()).total_seconds())
             modiin_group_id = -1001193789881
-            await bot.send_message(modiin_group_id, message_func(), parse_mode=ParseMode.MARKDOWN)
+            if message_type == "image":
+                with open(message_func(), "rb") as photo_file:
+                    await bot.send_photo(modiin_group_id, photo_file, caption="")
+            else:
+                await bot.send_message(modiin_group_id, message_func(), parse_mode=ParseMode.MARKDOWN)
             logging.info("Scheduled message sent.")
 
 
 def start_bot():
     scheduler_message = SchedulerMessage(bot)
-    scheduler_message.add_event(hour=7, minutes=0, message_func=modiin_hello_message)
+    scheduler_message.add_event(hour=7, minutes=0, message_func=modiin_hello_image, message_type="image")
 	# С помощью метода executor.start_polling опрашиваем
     # Dispatcher: ожидаем команду /start
     # executor.start_polling(dp, on_startup=startup, on_shutdown=shutdown)
