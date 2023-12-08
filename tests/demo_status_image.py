@@ -7,25 +7,25 @@ from config import configuration
 from LocationStatusImageBuilder import LocationStatusImageBuilder
 from WeatherClient import WeatherClient
 
-def russian_day_name(day):
-    day_names = [
-        'Понедельник', 'Вторник', 'Среда', 'Четверг',
-        'Пятница', 'Суббота', 'Воскресенье'
-    ]
-    return day_names[day]
+# def russian_day_name(day):
+#     day_names = [
+#         'Понедельник', 'Вторник', 'Среда', 'Четверг',
+#         'Пятница', 'Суббота', 'Воскресенье'
+#     ]
+#     return day_names[day]
 
-def russian_ordinal(number: int):
-    last_digit = number % 10
-    last_two_digits = number % 100
+# def russian_ordinal(number: int):
+#     last_digit = number % 10
+#     last_two_digits = number % 100
 
-    if last_two_digits in range(11, 15):
-        return str(number) + '-ый'
-    elif last_digit == 1:
-        return str(number) + '-ый'
-    elif last_digit in range(2, 5):
-        return str(number) + '-ой'
-    else:
-        return str(number) + '-ый'
+#     if last_two_digits in range(11, 15):
+#         return str(number) + '-ый'
+#     elif last_digit == 1:
+#         return str(number) + '-ый'
+#     elif last_digit in range(2, 5):
+#         return str(number) + '-ой'
+#     else:
+#         return str(number) + '-ый'
 
 # def status_image_building(location: str, temperature_now: float, sunrise_timestamp, sunset_timestamp, target_image_path: str):
 #     months = {

@@ -1,6 +1,7 @@
 from datetime import datetime
 from PIL import Image, ImageDraw, ImageFont
 from WeatherClient import WeatherClient
+from HebrewCalendar import HebrewCalendar
 
 class Localizations_Ru:
     def __init__(self) -> None:
@@ -36,6 +37,8 @@ class LocationStatusImageBuilder:
         year = current_date.year
         month = current_date.month
         day = current_date.day
+        hebrew_calendar = HebrewCalendar()
+        hebrew_calendart_str = hebrew_calendar.get_hebrew_date_str()
 
         specific_date = datetime(year=2023, month=10, day=7)
         number_of_war_days = (current_date - specific_date).days + 1
@@ -51,20 +54,22 @@ class LocationStatusImageBuilder:
 
         # Create a new image with white background
         # img = Image.new('RGB', (500, 300), color = (73, 109, 137))
-        width = 750
-        height = 500
+        width = 850
+        height = 600
         offset = 10
         with Image.new('RGB', (width, height), color = (83, 190, 137)) as img:
             d = ImageDraw.Draw(img)
 
             # Use a truetype font
-            fnt = ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf', 18)
+            fnt = ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf', 24)
 
             # Add text to image
             d.text((offset, 10), f"{self.location}", font=fnt, fill=(255, 255, 100))
-            d.text((offset, 40), f"Сегодня {day_of_week}, {date_str}, {war_day_str}", font=fnt, fill=(255, 255, 255))
-            d.text((offset, 70), f"Сейчас {cur_temp}°, восход: {sunrise_timestamp}, закат: {sunset_timestamp}.", font=fnt, fill=(255, 255, 255))
-            y_pos = 100
+            d.text((offset, 40), f"Сегодня {day_of_week}, {date_str}", font=fnt, fill=(255, 255, 255))
+            # d.text((width - 250, 40), f"{hebrew_calendart_str}", font=fnt, fill=(255, 255, 255))
+            d.text((offset, 70), f"{war_day_str}", font=fnt, fill=(255, 255, 255))
+            d.text((offset, 110), f"Сейчас {cur_temp}°, восход: {sunrise_timestamp}, закат: {sunset_timestamp}.", font=fnt, fill=(255, 255, 255))
+            y_pos = 150
             for forecast_item in forecast_list:
                 f_date, f_temp = forecast_item
                 d.text((offset, y_pos), f"{self.localization.get_day_of_week(f_date)} {f_temp['min_temp']}°..{f_temp['max_temp']}°", font=fnt, fill=(255, 255, 255))
