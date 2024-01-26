@@ -4,6 +4,10 @@ from pyluach import dates, hebrewcal, parshios
 # https://pypi.org/project/pyluach/
 #
 
+MONTH_NAMES_RU = [
+    'Нисан', 'Ияр', 'Сиван', 'Таммуз', 'Ав', 'Элул', 'Тишрей', 'Хешван',
+    'Кислев', 'Тевет', 'Шват', 'Адар', 'Адар 1', 'Адар 2']
+
 class HebrewCalendar:
     def __init__(self):
         None
@@ -22,6 +26,10 @@ class HebrewCalendar:
         parsha_heb = parshios.getparsha_string(today, israel=True, hebrew=True)
 
         return f"{today.day}.{today.month} {today.year} ({today.month_name()}), {today_hebrew_year}\nParsha (Israel)={parsha_eng}({parsha_heb})"
+    def get_hebrew_date_short_ru(self):
+        today = self.get_hebrew_date()
+        month_name_ru = MONTH_NAMES_RU[today.month-1]
+        return f"{today.day}.{today.month} ({month_name_ru}) {today.year}"
     def get_holiday(self, date=None, hebrew=True):
         if date==None:
             date = self.get_hebrew_date()

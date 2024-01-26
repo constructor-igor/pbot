@@ -38,7 +38,8 @@ class LocationStatusImageBuilder:
         month = current_date.month
         day = current_date.day
         hebrew_calendar = HebrewCalendar()
-        hebrew_calendart_str = hebrew_calendar.get_hebrew_date_str()
+        # hebrew_calendart_str = hebrew_calendar.get_hebrew_date_str()
+        hebrew_calendart_str = hebrew_calendar.get_hebrew_date_short_ru()
 
         specific_date = datetime(year=2023, month=10, day=7)
         number_of_war_days = (current_date - specific_date).days + 1
@@ -54,7 +55,7 @@ class LocationStatusImageBuilder:
 
         # Create a new image with white background
         # img = Image.new('RGB', (500, 300), color = (73, 109, 137))
-        width = 850
+        width = 900
         height = 600
         offset = 10
         with Image.new('RGB', (width, height), color = (83, 190, 137)) as img:
@@ -65,7 +66,8 @@ class LocationStatusImageBuilder:
 
             # Add text to image
             d.text((offset, 10), f"{self.location}", font=fnt, fill=(255, 255, 100))
-            d.text((offset, 40), f"Сегодня {day_of_week}, {date_str}", font=fnt, fill=(255, 255, 255))
+            d.text((offset, 40), f"Сегодня {day_of_week}, {date_str} - {hebrew_calendart_str}", font=fnt, fill=(255, 255, 255))
+            # d.text((width - 290, 40), f" - {hebrew_calendart_str}", font=fnt, fill=(255, 255, 255))
             # d.text((width - 250, 40), f"{hebrew_calendart_str}", font=fnt, fill=(255, 255, 255))
             d.text((offset, 70), f"{war_day_str}", font=fnt, fill=(255, 255, 255))
             d.text((offset, 110), f"Сейчас {cur_temp}°, восход: {sunrise_timestamp}, закат: {sunset_timestamp}.", font=fnt, fill=(255, 255, 255))
