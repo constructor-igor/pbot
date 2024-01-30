@@ -17,6 +17,7 @@ class YoutubeDownloader:
             # audio.download(filename=f"{audio.title}.mp3")
             target_file = audio.title.replace('?', '_')
             target_file = target_file.replace('/', '_')
+            target_file = target_file.replace('"', '_')
             target_filename = f"{target_file}.mp3"
             audio.download(filename=target_filename)
             file_size = os.path.getsize(target_filename) if os.path.exists(target_filename) else 0
