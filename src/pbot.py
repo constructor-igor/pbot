@@ -17,6 +17,7 @@ from config import configuration
 from UserSetting import UserSetting
 from GoogleDriveDownloader import GoogleDriveDownloader
 from YoutubeDownloader import YoutubeDownloader
+from YoutubeDownloaderFix import YoutubeDownloaderFix
 from WeatherClient import WeatherClient
 from HebrewProcessing import HebrewProcessing
 from HebrewCalendar import HebrewCalendar
@@ -269,7 +270,7 @@ async def process_message(message: types.Message, state: FSMContext):
         file_size = gdd.download(message.text, "episode.mp3")
         await message.reply(f"Downloaded {message.text} with size {bytes_to_mb(file_size)}")
     elif "youtu.be" in message.text or "youtube.com" in message.text:
-        yd = YoutubeDownloader()
+        yd = YoutubeDownloaderFix()
         file_size = yd.download(message.text, "")
         await message.reply(f"Downloaded {message.text} with size {bytes_to_mb(file_size)}")
     # elif contains_hebrew_chars(message.text):
@@ -336,6 +337,7 @@ def start_bot():
     executor.start_polling(dp, on_startup=startup, on_shutdown=shutdown)
 
 # modiin group: 1001193789881
+
 
 if __name__ == "__main__":
     start_bot()

@@ -2,3 +2,5 @@ aiogram==2.5
 pytube
 pyluach
 Pillow
+requests
+pytubefix
