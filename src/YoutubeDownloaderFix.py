@@ -5,6 +5,9 @@ import subprocess
 from pytubefix import YouTube
 from pytubefix.cli import on_progress
 
+#
+# https://habr.com/ru/articles/870110/
+#
 
 class YoutubeDownloaderFix:
     def __init__(self):
