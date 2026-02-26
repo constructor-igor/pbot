@@ -4,3 +4,4 @@ pyluach
 Pillow
 requests
 pytubefix
+telethon

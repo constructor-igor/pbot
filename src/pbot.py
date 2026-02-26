@@ -276,6 +276,8 @@ async def process_message(message: types.Message, state: FSMContext):
     # elif contains_hebrew_chars(message.text):
     #     hp = HebrewProcessing()
     #     await message.reply(hp.process(message.text))
+    elif message.text.startswith("/mb"):
+        return
     else:
         weather_client = WeatherClient(configuration.weather_api_key)
         source_location_name = message.text
@@ -304,6 +306,7 @@ async def handle_messages(message: types.Message):
 async def handle_messages(message: types.Message):
     # Handle messages in the CumtaAlertsChannel and forward them to the destination channel
     await forward_message(message)
+
 
 class SchedulerMessage():
     def __init__(self, bot):
@@ -336,8 +339,7 @@ def start_bot():
     # executor.start_polling(dp, on_startup=startup, on_shutdown=shutdown)
     executor.start_polling(dp, on_startup=startup, on_shutdown=shutdown)
 
-# modiin group: 1001193789881
-
 
 if __name__ == "__main__":
+    # modiin_hello_image()  # Generate the image at startup`  `
     start_bot()
