@@ -163,6 +163,47 @@ def draw_moon_glyph(d, cx, cy, r, idx):
 
 
 # ─────────────────────────────────────────────
+#  AQI helpers
+# ─────────────────────────────────────────────
+# Colour per AQI level (1..5)
+AQI_COLORS = {
+    1: (80,  200, 120),   # good – green
+    2: (200, 210,  60),   # fair – yellow
+    3: (255, 165,  40),   # moderate – orange
+    4: (220,  60,  60),   # poor – red
+    5: (160,  60, 200),   # very poor – purple
+}
+AQI_LABELS = {
+    1: "Воздух: отлично",
+    2: "Воздух: хорошо",
+    3: "Воздух: умеренно",
+    4: "Воздух: плохо",
+    5: "Воздух: опасно",
+}
+
+def draw_aqi_pill(d: ImageDraw.ImageDraw,
+                  x: int, y: int,
+                  aqi: int, pm25: float, pm10: float) -> None:
+    """Draw a compact AQI pill at position (x, y). Max width ~420px."""
+    color  = AQI_COLORS.get(aqi, C_GRAY)
+    label  = AQI_LABELS.get(aqi, "Воздух: н/д")
+    f_main = fnt(21)
+
+    bb1    = d.textbbox((0, 0), label, font=f_main)
+    pill_w = bb1[2] - bb1[0] + 48   # dot area + padding
+    pill_h = 36
+
+    d.rounded_rectangle([x, y, x+pill_w, y+pill_h],
+                         radius=14, fill=(0, 0, 0, 65), outline=color, width=1)
+
+    # coloured dot
+    dot_r = 7
+    d.ellipse([x+12, y+11, x+12+dot_r*2, y+11+dot_r*2], fill=color)
+
+    d.text((x+12+dot_r*2+8, y+8), label, font=f_main, fill=color)
+
+
+# ─────────────────────────────────────────────
 #  Temperature sparkline
 # ─────────────────────────────────────────────
 def draw_sparkline(d, x, y, w, h, forecast):
@@ -226,7 +267,12 @@ class LocationStatusImageBuilder:
     W = 1000
     H = 620
 
-    def __init__(self, location, weather_client, dollar_rate=None, euro_rate=None, bitcoin_price=None):
+    def __init__(self,
+                 location: str,
+                 weather_client,
+                 dollar_rate:   float | None = None,
+                 euro_rate:     float | None = None,
+                 bitcoin_price: float | None = None):
         self.location      = location
         self.wc            = weather_client
         self.dollar_rate   = dollar_rate
@@ -234,7 +280,7 @@ class LocationStatusImageBuilder:
         self.bitcoin_price = bitcoin_price
 
     # ── public ──────────────────────────────
-    def build(self, target_path):
+    def build(self, target_path: str) -> None:
         now = datetime.now()
 
         from HebrewCalendar import HebrewCalendar
@@ -244,6 +290,7 @@ class LocationStatusImageBuilder:
         forecast  = self.wc.get_forecast(self.location)
         cur_icon  = forecast[0][1].get('icon','01d') if forecast else '01d'
         pidx, pname = moon_phase(now)
+        aqi, _aqi_label, aqi_pm25, aqi_pm10 = self.wc.get_air_quality()
 
         img = gradient_bg(self.W, self.H)
 
@@ -256,7 +303,7 @@ class LocationStatusImageBuilder:
         d = ImageDraw.Draw(img, 'RGBA')
         d.rectangle([(0,0),(self.W,5)], fill=C_TEAL)
 
-        self._left(d, now, heb, sunrise, sunset, pidx, pname)
+        self._left(d, now, heb, sunrise, sunset, pidx, pname, aqi, aqi_pm25, aqi_pm10)
         self._weather_card(d, cur_temp, cur_icon)
         self._rates_pills(d)
         self._forecast_panel(d, forecast)
@@ -265,15 +312,11 @@ class LocationStatusImageBuilder:
         img.save(target_path, quality=95)
 
     # ── left column ─────────────────────────
-    def _left(self, d, now, heb, sunrise, sunset, pidx, pname):
-        # City name
+    def _left(self, d, now, heb, sunrise, sunset, pidx, pname, aqi: int, aqi_pm25: float, aqi_pm10: float):
         d.text((30, 16), "Модиин", font=fnt(50), fill=C_TEAL_LT)
 
-        # Date
         date_str = f"{DAYS_FULL[now.weekday()]}, {now.day} {MONTHS[now.month-1]} {now.year}"
         d.text((30, 76), date_str, font=fnt(26), fill=C_CREAM)
-
-        # Hebrew date
         d.text((30, 112), f"  {heb}", font=fnt(22, bold=False), fill=C_GOLD)
 
         d.line([(30,146),(500,146)], fill=C_TEAL, width=1)
@@ -290,18 +333,18 @@ class LocationStatusImageBuilder:
         draw_moon_glyph(d, 52, 250, 15, pidx)
         d.text((76, 238), pname, font=fnt(21, bold=False), fill=(185,210,240))
 
+        # AQI pill — sits below moon phase on the left
+        draw_aqi_pill(d, 30, 270, aqi, aqi_pm25, aqi_pm10)
 
-
-    # ── currency pills (vertically centred between left col and weather card) ──
+    # ── currency pills ───────────────────────
     def _rates_pills(self, d):
-        # Zone: x=490..650, y=16..311 (height of weather card area)
-        zone_x1, zone_x2 = 455, 630
+        zone_x1, zone_x2 = 455, 635
         zone_y1, zone_y2 = 130, 311
-        cx_zone = (zone_x1 + zone_x2) // 2  # 570
+        cx_zone = (zone_x1 + zone_x2) // 2
 
         pill_h = 36
         pill_gap = 10
-        pill_w = zone_x2 - zone_x1 - 10   # ~150px wide, fits zone
+        pill_w = zone_x2 - zone_x1 - 10
 
         rows = []
         if self.dollar_rate is not None:
@@ -312,19 +355,19 @@ class LocationStatusImageBuilder:
             btc_str = f"${self.bitcoin_price:,.0f}" if self.bitcoin_price >= 1000 else f"${self.bitcoin_price:.0f}"
             rows.append(("BTC ", btc_str, (255, 165, 50)))
 
+        if not rows:
+            return
+
         total_h = len(rows) * pill_h + (len(rows) - 1) * pill_gap
         start_y = zone_y1 + (zone_y2 - zone_y1 - total_h) // 2
 
         f = fnt(21)
         for i, (symbol, value, color) in enumerate(rows):
             py = start_y + i * (pill_h + pill_gap)
-            px = cx_zone - pill_w // 2
-            # measure both texts and expand pill if needed
             bs = d.textbbox((0,0), symbol, font=f)
             bv = d.textbbox((0,0), value,  font=f)
             sw, vw = bs[2]-bs[0], bv[2]-bv[0]
-            min_w = sw + vw + 36   # 12 left + 12 gap + 12 right
-            actual_w = max(pill_w, min_w)
+            actual_w = max(pill_w, sw + vw + 36)
             px = cx_zone - actual_w // 2
             d.rounded_rectangle([px, py, px+actual_w, py+pill_h], radius=18,
                                  fill=(0,0,0,65), outline=color, width=1)
@@ -337,13 +380,9 @@ class LocationStatusImageBuilder:
         d.rounded_rectangle([cx,cy,cx+cw,cy+ch], radius=20,
                              fill=(0,0,0,75), outline=C_TEAL, width=1)
 
-        # icon left side
         draw_icon(d, cx+82, cy+108, 76, cur_icon)
-
-        # temperature right side
         d.text((cx+155, cy+35), f"{cur_temp:.0f}\u00b0", font=fnt(90), fill=C_WHITE)
 
-        # description below icon
         desc = DESC_MAP.get(cur_icon, "")
         text_center(d, cx+82, cy+200, desc, fnt(22, bold=False), C_GRAY)
 
@@ -354,7 +393,7 @@ class LocationStatusImageBuilder:
         if n == 0:
             return
 
-        py, ph = 318, H - 318 - 52
+        py, ph = 335, H - 335 - 52
         d.rounded_rectangle([18,py,W-18,py+ph], radius=14,
                              fill=(0,0,0,55), outline=(255,255,255,25), width=1)
 
