@@ -292,58 +292,48 @@ class LocationStatusImageBuilder:
 
 
 
-    # ── currency pills (below weather card) ──
+    # ── currency pills (vertically centred between left col and weather card) ──
     def _rates_pills(self, d):
-        # Weather card: cx=640, cy=16, height=278 → bottom at 294
-        cy = 300   # just below weather card
-        pill_h = 38
-        pill_gap = 12
-        f = fnt(22)
+        # Zone: x=490..650, y=16..311 (height of weather card area)
+        zone_x1, zone_x2 = 455, 630
+        zone_y1, zone_y2 = 130, 311
+        cx_zone = (zone_x1 + zone_x2) // 2  # 570
 
-        # Fiat pills: $1 and €1
-        pills = []
+        pill_h = 36
+        pill_gap = 10
+        pill_w = zone_x2 - zone_x1 - 10   # ~150px wide, fits zone
+
+        rows = []
         if self.dollar_rate is not None:
-            pills.append(("$1", f"{self.dollar_rate:.2f} \u20aa", C_GOLD))
+            rows.append(("$1", f"{self.dollar_rate:.2f} \u20aa", C_GOLD))
         if self.euro_rate is not None:
-            pills.append(("\u20ac1", f"{self.euro_rate:.2f} \u20aa", (160, 210, 255)))
-
-        pill_w = 155
-        total_w = len(pills) * pill_w + (len(pills)-1) * pill_gap
-        # right-align to match weather card right edge (640+345=985)
-        start_x = 985 - total_w
-
-        for i, (symbol, value, color) in enumerate(pills):
-            px = start_x + i * (pill_w + pill_gap)
-            d.rounded_rectangle([px, cy, px+pill_w, cy+pill_h], radius=19,
-                                 fill=(0,0,0,65), outline=color, width=1)
-            d.text((px+14, cy+8), symbol, font=f, fill=color)
-            bb = d.textbbox((0,0), value, font=f)
-            tw = bb[2]-bb[0]
-            d.text((px+pill_w-tw-12, cy+8), value, font=f, fill=C_CREAM)
-
-        # Bitcoin pill (wider, full width, second row)
+            rows.append(("\u20ac1", f"{self.euro_rate:.2f} \u20aa", (160, 210, 255)))
         if self.bitcoin_price is not None:
-            btc_color = (255, 165, 50)   # orange
-            bcy = cy + pill_h + 8
-            # format: $92,345
-            if self.bitcoin_price >= 1000:
-                btc_str = f"${self.bitcoin_price:,.0f}"
-            else:
-                btc_str = f"${self.bitcoin_price:.0f}"
-            btc_pill_w = total_w  # same total width as fiat pills
-            bpx = 985 - btc_pill_w
-            d.rounded_rectangle([bpx, bcy, bpx+btc_pill_w, bcy+pill_h], radius=19,
-                                 fill=(0,0,0,65), outline=btc_color, width=1)
-            fb = fnt(20)
-            label = "BTC"
-            d.text((bpx+14, bcy+9), label, font=fb, fill=btc_color)
-            bb = d.textbbox((0,0), btc_str, font=fb)
-            tw = bb[2]-bb[0]
-            d.text((bpx+btc_pill_w-tw-12, bcy+9), btc_str, font=fb, fill=C_CREAM)
+            btc_str = f"${self.bitcoin_price:,.0f}" if self.bitcoin_price >= 1000 else f"${self.bitcoin_price:.0f}"
+            rows.append(("BTC ", btc_str, (255, 165, 50)))
+
+        total_h = len(rows) * pill_h + (len(rows) - 1) * pill_gap
+        start_y = zone_y1 + (zone_y2 - zone_y1 - total_h) // 2
+
+        f = fnt(21)
+        for i, (symbol, value, color) in enumerate(rows):
+            py = start_y + i * (pill_h + pill_gap)
+            px = cx_zone - pill_w // 2
+            # measure both texts and expand pill if needed
+            bs = d.textbbox((0,0), symbol, font=f)
+            bv = d.textbbox((0,0), value,  font=f)
+            sw, vw = bs[2]-bs[0], bv[2]-bv[0]
+            min_w = sw + vw + 36   # 12 left + 12 gap + 12 right
+            actual_w = max(pill_w, min_w)
+            px = cx_zone - actual_w // 2
+            d.rounded_rectangle([px, py, px+actual_w, py+pill_h], radius=18,
+                                 fill=(0,0,0,65), outline=color, width=1)
+            d.text((px+12, py+8), symbol, font=f, fill=color)
+            d.text((px+actual_w-vw-12, py+8), value, font=f, fill=C_CREAM)
 
     # ── weather card (right) ─────────────────
     def _weather_card(self, d, cur_temp, cur_icon):
-        cx, cy, cw, ch = 640, 16, 345, 278
+        cx, cy, cw, ch = 650, 16, 335, 295
         d.rounded_rectangle([cx,cy,cx+cw,cy+ch], radius=20,
                              fill=(0,0,0,75), outline=C_TEAL, width=1)
 
@@ -351,7 +341,7 @@ class LocationStatusImageBuilder:
         draw_icon(d, cx+82, cy+108, 76, cur_icon)
 
         # temperature right side
-        d.text((cx+170, cy+28), f"{cur_temp:.0f}\u00b0", font=fnt(100), fill=C_WHITE)
+        d.text((cx+155, cy+35), f"{cur_temp:.0f}\u00b0", font=fnt(90), fill=C_WHITE)
 
         # description below icon
         desc = DESC_MAP.get(cur_icon, "")
@@ -364,7 +354,7 @@ class LocationStatusImageBuilder:
         if n == 0:
             return
 
-        py, ph = 400, H - 400 - 52
+        py, ph = 318, H - 318 - 52
         d.rounded_rectangle([18,py,W-18,py+ph], radius=14,
                              fill=(0,0,0,55), outline=(255,255,255,25), width=1)
 
