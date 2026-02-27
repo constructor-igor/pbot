@@ -1,3 +1,4 @@
+from typing import Tuple
 import datetime
 from datetime import timezone, timedelta
 import requests
@@ -74,3 +75,27 @@ class WeatherClient():
                                "description": today_desc, "icon": today_icon}
 
         return sorted(forecast.items(), key=lambda x: x[0])
+    
+    def get_air_quality(self, lat: float = 31.8969, lon: float = 34.9838) -> Tuple[int, str, float, float]:
+        """
+        Returns: (aqi, label, pm2_5, pm10)
+        aqi: 1=Good, 2=Fair, 3=Moderate, 4=Poor, 5=Very Poor
+        """
+        response = requests.get(
+            f"http://api.openweathermap.org/data/2.5/air_pollution"
+            f"?lat={lat}&lon={lon}&appid={self.weather_api_key}"
+        )
+        data = response.json()
+        components = data["list"][0]["components"]
+        aqi  = data["list"][0]["main"]["aqi"]
+        pm25 = components["pm2_5"]
+        pm10 = components["pm10"]
+    
+        labels: dict[int, str] = {
+            1: "Отличное 🟢",
+            2: "Хорошее 🟡",
+            3: "Умеренное 🟠",
+            4: "Плохое 🔴",
+            5: "Опасное 🟣",
+        }
+        return aqi, labels[aqi], pm25, pm10
