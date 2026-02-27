@@ -2,7 +2,6 @@ from datetime import datetime
 from PIL import Image, ImageDraw, ImageFont
 import math
 import os
-from WeatherClient import WeatherClient
 
 
 # ─────────────────────────────────────────────
@@ -227,10 +226,12 @@ class LocationStatusImageBuilder:
     W = 1000
     H = 620
 
-    def __init__(self, location, weather_client, dollar_rate=None):
-        self.location    = location
-        self.wc          = weather_client
-        self.dollar_rate = dollar_rate
+    def __init__(self, location, weather_client, dollar_rate=None, euro_rate=None, bitcoin_price=None):
+        self.location      = location
+        self.wc            = weather_client
+        self.dollar_rate   = dollar_rate
+        self.euro_rate     = euro_rate
+        self.bitcoin_price = bitcoin_price
 
     # ── public ──────────────────────────────
     def build(self, target_path):
@@ -257,6 +258,7 @@ class LocationStatusImageBuilder:
 
         self._left(d, now, heb, sunrise, sunset, pidx, pname)
         self._weather_card(d, cur_temp, cur_icon)
+        self._rates_pills(d)
         self._forecast_panel(d, forecast)
         self._footer(d, now)
 
@@ -288,11 +290,56 @@ class LocationStatusImageBuilder:
         draw_moon_glyph(d, 52, 250, 15, pidx)
         d.text((76, 238), pname, font=fnt(21, bold=False), fill=(185,210,240))
 
-        # Dollar
+
+
+    # ── currency pills (below weather card) ──
+    def _rates_pills(self, d):
+        # Weather card: cx=640, cy=16, height=278 → bottom at 294
+        cy = 300   # just below weather card
+        pill_h = 38
+        pill_gap = 12
+        f = fnt(22)
+
+        # Fiat pills: $1 and €1
+        pills = []
         if self.dollar_rate is not None:
-            d.rounded_rectangle([30,272,320,308], radius=16,
-                                 fill=(0,0,0,60), outline=C_GOLD, width=1)
-            d.text((50, 279), f"$1 = {self.dollar_rate:.2f} NIS", font=fnt(23), fill=C_GOLD)
+            pills.append(("$1", f"{self.dollar_rate:.2f} \u20aa", C_GOLD))
+        if self.euro_rate is not None:
+            pills.append(("\u20ac1", f"{self.euro_rate:.2f} \u20aa", (160, 210, 255)))
+
+        pill_w = 155
+        total_w = len(pills) * pill_w + (len(pills)-1) * pill_gap
+        # right-align to match weather card right edge (640+345=985)
+        start_x = 985 - total_w
+
+        for i, (symbol, value, color) in enumerate(pills):
+            px = start_x + i * (pill_w + pill_gap)
+            d.rounded_rectangle([px, cy, px+pill_w, cy+pill_h], radius=19,
+                                 fill=(0,0,0,65), outline=color, width=1)
+            d.text((px+14, cy+8), symbol, font=f, fill=color)
+            bb = d.textbbox((0,0), value, font=f)
+            tw = bb[2]-bb[0]
+            d.text((px+pill_w-tw-12, cy+8), value, font=f, fill=C_CREAM)
+
+        # Bitcoin pill (wider, full width, second row)
+        if self.bitcoin_price is not None:
+            btc_color = (255, 165, 50)   # orange
+            bcy = cy + pill_h + 8
+            # format: $92,345
+            if self.bitcoin_price >= 1000:
+                btc_str = f"${self.bitcoin_price:,.0f}"
+            else:
+                btc_str = f"${self.bitcoin_price:.0f}"
+            btc_pill_w = total_w  # same total width as fiat pills
+            bpx = 985 - btc_pill_w
+            d.rounded_rectangle([bpx, bcy, bpx+btc_pill_w, bcy+pill_h], radius=19,
+                                 fill=(0,0,0,65), outline=btc_color, width=1)
+            fb = fnt(20)
+            label = "BTC"
+            d.text((bpx+14, bcy+9), label, font=fb, fill=btc_color)
+            bb = d.textbbox((0,0), btc_str, font=fb)
+            tw = bb[2]-bb[0]
+            d.text((bpx+btc_pill_w-tw-12, bcy+9), btc_str, font=fb, fill=C_CREAM)
 
     # ── weather card (right) ─────────────────
     def _weather_card(self, d, cur_temp, cur_icon):
@@ -317,7 +364,7 @@ class LocationStatusImageBuilder:
         if n == 0:
             return
 
-        py, ph = 312, H - 312 - 52
+        py, ph = 400, H - 400 - 52
         d.rounded_rectangle([18,py,W-18,py+ph], radius=14,
                              fill=(0,0,0,55), outline=(255,255,255,25), width=1)
 
