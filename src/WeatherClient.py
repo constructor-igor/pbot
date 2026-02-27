@@ -26,22 +26,19 @@ class WeatherClient():
             return location_name, cur_temp, sunrise_time, sunset_time
 
     def get_forecast(self, location_name):
-        # Get today's true min/max from current weather endpoint.
-        # OWM /forecast gives only future 3-hour steps, so early in the morning
-        # today's range is incomplete. /weather has the daily temp_min/temp_max
-        # which is a full-day estimate from the forecast model.
+        # Step 1: get current temp + icon (needed to fill in early-morning gap)
         current_resp = requests.get(
             f"http://api.openweathermap.org/data/2.5/weather"
             f"?q={location_name}&units=metric&appid={self.weather_api_key}"
         )
         current_data = current_resp.json()
-        today = datetime.date.today()
-        today_min  = current_data["main"]["temp_min"]
-        today_max  = current_data["main"]["temp_max"]
-        today_icon = current_data["weather"][0]["icon"]
-        today_desc = current_data["weather"][0]["description"]
+        today        = datetime.date.today()
+        current_temp = current_data["main"]["temp"]
+        today_icon   = current_data["weather"][0]["icon"]
+        today_desc   = current_data["weather"][0]["description"]
 
-        # Get 5-day / 3-hour forecast
+        # Step 2: 5-day / 3-hour forecast
+        # Each 3h item has temp_max/temp_min for that slot — use them for best daily range
         response = requests.get(
             f"http://api.openweathermap.org/data/2.5/forecast"
             f"?q={location_name}&units=metric&appid={self.weather_api_key}"
@@ -52,25 +49,28 @@ class WeatherClient():
 
         forecast = {}
         for item in data["list"]:
-            date = datetime.datetime.fromtimestamp(item["dt"]).date()
-            temp = item["main"]["temp"]
-            desc = item["weather"][0]["description"]
-            icon = item["weather"][0]["icon"]
+            date     = datetime.datetime.fromtimestamp(item["dt"]).date()
+            # temp_max/temp_min per slot are more accurate than temp alone
+            slot_max = item["main"].get("temp_max", item["main"]["temp"])
+            slot_min = item["main"].get("temp_min", item["main"]["temp"])
+            desc     = item["weather"][0]["description"]
+            icon     = item["weather"][0]["icon"]
             if date in forecast:
-                forecast[date]["max_temp"] = max(forecast[date]["max_temp"], temp)
-                forecast[date]["min_temp"] = min(forecast[date]["min_temp"], temp)
+                forecast[date]["max_temp"] = max(forecast[date]["max_temp"], slot_max)
+                forecast[date]["min_temp"] = min(forecast[date]["min_temp"], slot_min)
             else:
-                forecast[date] = {"max_temp": temp, "min_temp": temp,
+                forecast[date] = {"max_temp": slot_max, "min_temp": slot_min,
                                   "description": desc, "icon": icon}
 
-        # Override today with accurate full-day min/max from current weather model
+        # Step 3: include current actual temp in today's range
+        # (at 07:00 the forecast starts from 09:00, missing the morning reading)
         if today in forecast:
-            forecast[today]["min_temp"]   = min(forecast[today]["min_temp"], today_min)
-            forecast[today]["max_temp"]   = max(forecast[today]["max_temp"], today_max)
+            forecast[today]["min_temp"]    = min(forecast[today]["min_temp"], current_temp)
+            forecast[today]["max_temp"]    = max(forecast[today]["max_temp"], current_temp)
             forecast[today]["icon"]        = today_icon
             forecast[today]["description"] = today_desc
         else:
-            forecast[today] = {"max_temp": today_max, "min_temp": today_min,
+            forecast[today] = {"max_temp": current_temp, "min_temp": current_temp,
                                "description": today_desc, "icon": today_icon}
 
         return sorted(forecast.items(), key=lambda x: x[0])
