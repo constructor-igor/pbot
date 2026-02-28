@@ -319,22 +319,28 @@ class LocationStatusImageBuilder:
         d.text((30, 76), date_str, font=fnt(26), fill=C_CREAM)
         d.text((30, 112), f"  {heb}", font=fnt(22, bold=False), fill=C_GOLD)
 
-        d.line([(30,146),(500,146)], fill=C_TEAL, width=1)
+        # Operation "Roar of the Lion" day counter
+        op_start = datetime(2026, 2, 28)
+        op_days = (now - op_start).days + 1
+        op_text = f"День операции \"Рык Льва\" — {op_days}"
+        d.text((30, 142), op_text, font=fnt(22), fill=(255, 120, 80))
+
+        d.line([(30,178),(500,178)], fill=C_TEAL, width=1)
 
         # Sunrise
-        icon_sun(d, 52, 172, 20)
-        d.text((80, 160), f"Восход  {sunrise}", font=fnt(24), fill=C_GOLD)
+        icon_sun(d, 52, 204, 20)
+        d.text((80, 192), f"Восход  {sunrise}", font=fnt(24), fill=C_GOLD)
 
         # Sunset
-        icon_moon_crescent(d, 52, 212, 18, color=(180,205,255), bg=C_BG_TOP)
-        d.text((80, 200), f"Закат    {sunset}", font=fnt(24), fill=C_BLUE_LT)
+        icon_moon_crescent(d, 52, 244, 18, color=(180,205,255), bg=C_BG_TOP)
+        d.text((80, 232), f"Закат    {sunset}", font=fnt(24), fill=C_BLUE_LT)
 
         # Moon phase
-        draw_moon_glyph(d, 52, 250, 15, pidx)
-        d.text((76, 238), pname, font=fnt(21, bold=False), fill=(185,210,240))
+        draw_moon_glyph(d, 52, 282, 15, pidx)
+        d.text((76, 270), pname, font=fnt(21, bold=False), fill=(185,210,240))
 
         # AQI pill — sits below moon phase on the left
-        draw_aqi_pill(d, 30, 270, aqi, aqi_pm25, aqi_pm10)
+        draw_aqi_pill(d, 30, 300, aqi, aqi_pm25, aqi_pm10)
 
     # ── currency pills ───────────────────────
     def _rates_pills(self, d):
