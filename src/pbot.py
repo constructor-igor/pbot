@@ -68,7 +68,15 @@ user_settings = UserSetting()
 #     return day_names[day]
 
 def modiin_hello_image():
-    builder = LocationStatusImageBuilder("Modiin", WeatherClient(configuration.weather_api_key))
+    exch_rates = ExchangeRates(configuration.rates_access_token)
+    rates = exch_rates.get_rate(base_currency='USD', target_currencies=['ILS', 'EUR'])
+    dollar_rate = rates["ILS"]
+    euro_rate = rates["ILS"] / rates["EUR"]       # 1 EUR = X ILS
+    bitcoin_rate = exch_rates.get_bitcoin_usd()       # 1 BTC = X USD
+    # logging.info(f'1 USD = {rates["ILS"]} ILS  / {rates["EUR"]} EUR')
+    # logging.info(f'1 EUR = {rates["ILS"]/rates["EUR"]} ILS')
+    builder = LocationStatusImageBuilder("Modiin", WeatherClient(configuration.weather_api_key),
+                                         dollar_rate=dollar_rate, euro_rate=euro_rate, bitcoin_price=bitcoin_rate)
     builder.build(os.path.join(data_folder, "modiin.jpg"))
     return os.path.join(data_folder, "modiin.jpg")
 # def modiin_hello_message():
