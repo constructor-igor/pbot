@@ -322,8 +322,14 @@ class SchedulerMessage():
         self.bot = bot
         self.loop = asyncio.get_event_loop()
         self.modiin_group_id = -1001193789881
-    def add_event(self, hour, minutes, message_func, message_type="text"):
-        self.loop.create_task(self.send_scheduled_message(hour, minutes, message_func, message_type))
+    # def add_event(self, hour, minutes, message_func, message_type="text"):
+    #     self.loop.create_task(self.send_scheduled_message(hour, minutes, message_func, message_type))
+    def add_event(self, hour: int, minutes: int, message_func, message_type: str = "text",day_of_week: int | None = None):
+        """
+        :param day_of_week: 0=Пн … 6=Вс, или None = каждый день
+        """
+        self.loop.create_task(self._run(hour, minutes, message_func, message_type, day_of_week))
+
     async def send_scheduled_message(self, hour, minutes, message_func, message_type="text"):
         while True:
             now = datetime.now()
@@ -338,6 +344,30 @@ class SchedulerMessage():
             else:
                 await bot.send_message(self.modiin_group_id, message_func(), parse_mode=ParseMode.MARKDOWN)
             logging.info("Scheduled message sent.")
+
+    async def _run(self, hour: int, minutes: int, message_func, message_type: str, day_of_week: int | None):
+        while True:
+            now = datetime.now()
+            target = now.replace(hour=hour, minute=minutes, second=0, microsecond=0)
+            if target <= now:
+                target += timedelta(days=1)
+
+            if day_of_week is not None:
+                while target.weekday() != day_of_week:
+                    target += timedelta(days=1)
+
+            await asyncio.sleep((target - datetime.now()).total_seconds())
+
+            try:
+                modiin_group_id = -1001193789881
+                if message_type == "image":
+                    with open(message_func(), "rb") as photo_file:
+                        await self.bot.send_photo(modiin_group_id, photo_file, caption="")
+                else:
+                    await self.bot.send_message(modiin_group_id, message_func(), parse_mode=ParseMode.MARKDOWN)
+                logging.info("Scheduled message sent.")
+            except Exception as e:
+                logging.error("Failed to send scheduled message: %s", e)
 
 
 def start_bot():
