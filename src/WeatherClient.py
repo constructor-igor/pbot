@@ -75,7 +75,7 @@ class WeatherClient():
                                "description": today_desc, "icon": today_icon}
 
         return sorted(forecast.items(), key=lambda x: x[0])
-    
+
     def get_air_quality(self, lat: float = 31.8969, lon: float = 34.9838) -> Tuple[int, str, float, float]:
         """
         Returns: (aqi, label, pm2_5, pm10)
@@ -90,7 +90,7 @@ class WeatherClient():
         aqi  = data["list"][0]["main"]["aqi"]
         pm25 = components["pm2_5"]
         pm10 = components["pm10"]
-    
+
         labels: dict[int, str] = {
             1: "Отличное 🟢",
             2: "Хорошее 🟡",

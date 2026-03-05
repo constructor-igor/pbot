@@ -25,6 +25,7 @@ from CalendarImageBuilder import CalendarImageBuilder
 from ExchangeRates import ExchangeRates
 from IsraelMetrologyService import IsraelMetrologyService
 from LocationStatusImageBuilder import LocationStatusImageBuilder
+from ShabbatMessageSender import ShabbatMessageSender
 
 
 TAMMUZ: int = 4
@@ -320,6 +321,7 @@ class SchedulerMessage():
     def __init__(self, bot):
         self.bot = bot
         self.loop = asyncio.get_event_loop()
+        self.modiin_group_id = -1001193789881
     def add_event(self, hour, minutes, message_func, message_type="text"):
         self.loop.create_task(self.send_scheduled_message(hour, minutes, message_func, message_type))
     async def send_scheduled_message(self, hour, minutes, message_func, message_type="text"):
@@ -330,18 +332,19 @@ class SchedulerMessage():
             if time_until_target.total_seconds() < 0:
                 target_time += timedelta(days=1)
             await asyncio.sleep((target_time - datetime.now()).total_seconds())
-            modiin_group_id = -1001193789881
             if message_type == "image":
                 with open(message_func(), "rb") as photo_file:
-                    await bot.send_photo(modiin_group_id, photo_file, caption="")
+                    await bot.send_photo(self.modiin_group_id, photo_file, caption="")
             else:
-                await bot.send_message(modiin_group_id, message_func(), parse_mode=ParseMode.MARKDOWN)
+                await bot.send_message(self.modiin_group_id, message_func(), parse_mode=ParseMode.MARKDOWN)
             logging.info("Scheduled message sent.")
 
 
 def start_bot():
     scheduler_message = SchedulerMessage(bot)
     scheduler_message.add_event(hour=7, minutes=0, message_func=modiin_hello_image, message_type="image")
+    shabbat_sender = ShabbatMessageSender(bot, WeatherClient(configuration.weather_api_key))
+    scheduler_message.add_event(hour=11, minutes=0, message_func=shabbat_sender._build_message, message_type="text", day_of_week=4)
 	# С помощью метода executor.start_polling опрашиваем
     # Dispatcher: ожидаем команду /start
     # executor.start_polling(dp, on_startup=startup, on_shutdown=shutdown)
