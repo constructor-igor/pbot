@@ -147,8 +147,8 @@ class TestBuildMessage(SenderMixin, unittest.TestCase):
              patch.object(self.sender, '_fetch_weekend_forecast', return_value=(6, 16, "Малооблачно")):
             msg = self.sender._build_message()
 
-        self.assertIn("28 февраля",    msg)
-        self.assertIn("10 адара 5786", msg)
+        self.assertIn("6 марта",    msg)
+        self.assertIn("17.12 (Адар) 5786", msg)
         self.assertIn("Тецаве",        msg)
         self.assertIn("17:17",         msg)
         self.assertIn("18:13",         msg)
@@ -162,7 +162,7 @@ class TestBuildMessage(SenderMixin, unittest.TestCase):
             msg = self.sender._build_message()
 
         lines = msg.split("\n")
-        self.assertIn("февраля", lines[0])
+        self.assertIn("6 марта", lines[0])
         parasha_idx = next(i for i, l in enumerate(lines) if "Тецаве" in l)
         candles_idx = next(i for i, l in enumerate(lines) if "17:17"  in l)
         self.assertLess(parasha_idx, candles_idx)
@@ -231,7 +231,7 @@ class TestSendMethods(SenderMixin, unittest.TestCase):
 
     def test_full_message_text(self):
         expected = (
-            "🗓 28 февраля • 10 адара 5786\n"
+            "🗓 6 марта • 17.12 (Адар) 5786\n"
             "\n"
             "🕍 Суббота — недельная глава Тецаве\n"
             "\n"
