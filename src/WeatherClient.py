@@ -49,19 +49,26 @@ class WeatherClient():
             raise Exception(data["message"])
 
         forecast = {}
+        slot_counts = {}   # track how many 3h slots we have per day
         for item in data["list"]:
             date     = datetime.datetime.fromtimestamp(item["dt"]).date()
-            # temp_max/temp_min per slot are more accurate than temp alone
             slot_max = item["main"].get("temp_max", item["main"]["temp"])
             slot_min = item["main"].get("temp_min", item["main"]["temp"])
             desc     = item["weather"][0]["description"]
             icon     = item["weather"][0]["icon"]
+            slot_counts[date] = slot_counts.get(date, 0) + 1
             if date in forecast:
                 forecast[date]["max_temp"] = max(forecast[date]["max_temp"], slot_max)
                 forecast[date]["min_temp"] = min(forecast[date]["min_temp"], slot_min)
             else:
                 forecast[date] = {"max_temp": slot_max, "min_temp": slot_min,
                                   "description": desc, "icon": icon}
+
+        # Drop days with fewer than 4 slots (< 12h of data) —
+        # typically the last day which only has 1-2 early-morning points
+        # Today is exempt — it's corrected separately in Step 3
+        forecast = {d: v for d, v in forecast.items()
+                    if slot_counts.get(d, 0) >= 4 or d == today}
 
         # Step 3: include current actual temp in today's range
         # (at 07:00 the forecast starts from 09:00, missing the morning reading)

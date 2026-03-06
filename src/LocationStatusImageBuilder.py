@@ -2,7 +2,7 @@ from datetime import datetime
 from PIL import Image, ImageDraw, ImageFont
 import math
 import os
-
+from WeatherClient import WeatherClient
 
 # ─────────────────────────────────────────────
 #  Palette (from Modiin emblem)
@@ -269,12 +269,12 @@ class LocationStatusImageBuilder:
 
     def __init__(self,
                  location: str,
-                 weather_client,
+                 weather_client: WeatherClient,
                  dollar_rate:   float | None = None,
                  euro_rate:     float | None = None,
                  bitcoin_price: float | None = None):
         self.location      = location
-        self.wc            = weather_client
+        self.wc: WeatherClient = weather_client
         self.dollar_rate   = dollar_rate
         self.euro_rate     = euro_rate
         self.bitcoin_price = bitcoin_price

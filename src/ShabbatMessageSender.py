@@ -65,7 +65,7 @@ class ShabbatMessageSender:
     """Collects Shabbat data and sends a weekly Friday message to a Telegram channel."""
 
     # Hebcal GeoNames ID for Modiin-Maccabim-Reut
-    MODIIN_GEONAME_ID: int = 281184
+    MODIIN_GEONAME_ID: int = 282926
     HEBCAL_SHABBAT_URL: str = "https://www.hebcal.com/shabbat"
 
     def __init__(self, bot: Bot, weather_client: WeatherClient, channel_link: str = "t.me/modiin_ru") -> None:
@@ -173,15 +173,21 @@ class ShabbatMessageSender:
         shabbat = self._fetch_shabbat_data()
         t_min, t_max, weather_desc = self._fetch_weekend_forecast()
 
-        # Gregorian date of Saturday
-        sat = shabbat["shabbat_date"]
-        if sat:
-            greg_date = f"{sat.day} {MONTHS_RU[sat.month]}"
-        else:
-            tomorrow = datetime.now().date() + timedelta(days=1)
-            greg_date = f"{tomorrow.day} {MONTHS_RU[tomorrow.month]}"
+        today = datetime.now()
+        greg_date = f"{today.day} {MONTHS_RU[today.month]}"
 
-        hebrew_date = shabbat["hebrew_date"] or ""
+        from HebrewCalendar import HebrewCalendar
+        hebrew_date = HebrewCalendar().get_hebrew_date_short_ru()
+
+        # Gregorian date of Saturday
+        # sat = shabbat["shabbat_date"]
+        # if sat:
+        #     greg_date = f"{sat.day} {MONTHS_RU[sat.month]}"
+        # else:
+        #     tomorrow = datetime.now().date() + timedelta(days=1)
+        #     greg_date = f"{tomorrow.day} {MONTHS_RU[tomorrow.month]}"
+
+        # hebrew_date = shabbat["hebrew_date"] or ""
         parasha     = shabbat["parasha"]     or "—"
         candles     = shabbat["candles"]     or "—"
         havdalah    = shabbat["havdalah"]    or "—"

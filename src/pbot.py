@@ -359,12 +359,13 @@ class SchedulerMessage():
             await asyncio.sleep((target - datetime.now()).total_seconds())
 
             try:
-                modiin_group_id = -1001193789881
                 if message_type == "image":
                     with open(message_func(), "rb") as photo_file:
-                        await self.bot.send_photo(modiin_group_id, photo_file, caption="")
+                        await self.bot.send_photo(self.modiin_group_id, photo_file, caption="")
                 else:
-                    await self.bot.send_message(modiin_group_id, message_func(), parse_mode=ParseMode.MARKDOWN)
+                    msg = message_func()
+                    parse_mode = ParseMode.HTML if isinstance(msg, str) else None
+                    await self.bot.send_message(self.modiin_group_id, msg, parse_mode=parse_mode)
                 logging.info("Scheduled message sent.")
             except Exception as e:
                 logging.error("Failed to send scheduled message: %s", e)
