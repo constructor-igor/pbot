@@ -26,6 +26,7 @@ from ExchangeRates import ExchangeRates
 from IsraelMetrologyService import IsraelMetrologyService
 from LocationStatusImageBuilder import LocationStatusImageBuilder
 from ShabbatMessageSender import ShabbatMessageSender
+from TrafficReporter import TrafficReporter
 
 
 TAMMUZ: int = 4
@@ -372,10 +373,17 @@ class SchedulerMessage():
 
 
 def start_bot():
+    modiin_group_id = -1001193789881
+
     scheduler_message = SchedulerMessage(bot)
     scheduler_message.add_event(hour=7, minutes=0, message_func=modiin_hello_image, message_type="image")
+
     shabbat_sender = ShabbatMessageSender(bot, WeatherClient(configuration.weather_api_key))
     scheduler_message.add_event(hour=11, minutes=0, message_func=shabbat_sender._build_message, message_type="text", day_of_week=4)
+
+    traffic_reporter = TrafficReporter(bot = bot, channel_id = modiin_group_id, google_maps_api_key = configuration.google_maps_api_key)
+    scheduler_message.add_event(hour=8, minutes=0, message_func=traffic_reporter.build_message, message_type="text")
+
 	# С помощью метода executor.start_polling опрашиваем
     # Dispatcher: ожидаем команду /start
     # executor.start_polling(dp, on_startup=startup, on_shutdown=shutdown)

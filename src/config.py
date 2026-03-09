@@ -11,5 +11,6 @@ class Config():
         self.weather_api_key = config['Credentials']['weather_api_key']
         self.log_folder_path = config['Paths']['log_folder_path']
         self.rates_access_token = config['Credentials']['openexchangerates']
+        self.google_maps_api_key = config['Credentials']['google_maps_api_key']
 
 configuration = Config()
