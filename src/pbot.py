@@ -365,8 +365,9 @@ class SchedulerMessage():
                         await self.bot.send_photo(self.modiin_group_id, photo_file, caption="")
                 else:
                     msg = message_func()
-                    parse_mode = ParseMode.HTML if isinstance(msg, str) else None
-                    await self.bot.send_message(self.modiin_group_id, msg, parse_mode=parse_mode)
+                    if msg is not None and msg != "":
+                        parse_mode = ParseMode.HTML if isinstance(msg, str) else None
+                        await self.bot.send_message(self.modiin_group_id, msg, parse_mode=parse_mode)
                 logging.info("Scheduled message sent.")
             except Exception as e:
                 logging.error("Failed to send scheduled message: %s", e)
