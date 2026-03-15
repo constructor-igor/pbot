@@ -53,7 +53,7 @@ ROUTES_API_URL = "https://routes.googleapis.com/distanceMatrix/v2:computeRouteMa
 
 class TrafficReporter:
 
-    MIN_DELAY_MINUTES: int = 10
+    MIN_DELAY_MINUTES: int = 5
 
     def __init__(
         self,
