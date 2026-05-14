@@ -320,10 +320,10 @@ class LocationStatusImageBuilder:
         d.text((30, 112), f"  {heb}", font=fnt(22, bold=False), fill=C_GOLD)
 
         # Operation "Roar of the Lion" day counter
-        op_start = datetime(2026, 2, 28)
-        op_days = (now - op_start).days + 1
-        op_text = f"День операции \"Рык Льва\" — {op_days}"
-        d.text((30, 142), op_text, font=fnt(22), fill=(255, 120, 80))
+        # op_start = datetime(2026, 2, 28)
+        # op_days = (now - op_start).days + 1
+        # op_text = f"День операции \"Рык Льва\" — {op_days}"
+        # d.text((30, 142), op_text, font=fnt(22), fill=(255, 120, 80))
 
         d.line([(30,178),(500,178)], fill=C_TEAL, width=1)
 
