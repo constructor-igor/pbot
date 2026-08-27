@@ -2,8 +2,7 @@ import os
 import logging
 import re
 import subprocess
-from pytubefix import YouTube
-from pytubefix.cli import on_progress
+import yt_dlp
 
 #
 # https://habr.com/ru/articles/870110/
@@ -17,15 +16,18 @@ class YoutubeDownloaderFix:
     def download_audio(self, link: str) -> int:
         logging.info(f"Download is starting for {link}")
         try:
-            yt = YouTube(url=link, on_progress_callback=on_progress)
-            audio_stream = yt.streams \
-                    .filter(only_audio=True) \
-                    .order_by('abr') \
-                    .desc() \
-                    .first()
-            logging.info(f"Selected audio stream: {audio_stream.title}")
-            file_name = self.get_file_name(yt.title)
-            out_file = audio_stream.download(filename=file_name)
+            with yt_dlp.YoutubeDL({
+                "format": "bestaudio/best",
+                "noplaylist": True,
+                "quiet": True,
+            }) as downloader:
+                info = downloader.extract_info(link, download=False)
+                file_name = self.get_file_name(info["title"])
+                downloader.params["outtmpl"] = {"default": file_name}
+                out_file = downloader.prepare_filename(info)
+                downloader.download([link])
+
+            logging.info(f"Selected audio stream: {info['title']}")
             base, _ = os.path.splitext(out_file)
             mp3_file = base + ".mp3"
 
@@ -36,7 +38,7 @@ class YoutubeDownloaderFix:
             subprocess.run([
                 "ffmpeg", "-y", "-i", out_file,
                 "-vn", "-ab", "128k", "-ar", "44100", "-f", "mp3", mp3_file
-            ])
+            ], check=True)
 
             # remove original file if you want
             os.remove(out_file)
